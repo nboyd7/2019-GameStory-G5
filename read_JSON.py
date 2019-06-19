@@ -17,7 +17,7 @@ import json
 
 def json2dataset(jsonFile):
     result_array = []
-    for i in range(0, len(jsonFile)-1):
+    for i in range(0, len(jsonFile) - 1):
         result_dict = {}
         jobj = jsonFile[i]
         jdata = jobj["data"]
@@ -38,22 +38,23 @@ def json2dataset(jsonFile):
 
     return result_array
 
-#todo: go over our dataset and extract eventType to be weighed
+
+# todo: go over our dataset and extract eventType to be weighed
 def weighEventType(dataset):
-	for event in dataset:
-		if event["event_type"] == "kill":
-			event["weight"] = 1
-		if event["event_type"] == "kill_hs":
-			event["weight"] = 2
-		if event["event_type"] == "kill_pnt":
-			event["weight"] = 2
-		if event["event_type"] == "kill_hs_pnt":
-			event["weight"] = 3
-	return dataset
+    for event in dataset:
+        if event["event_type"] == "kill":
+            event["weight"] = 1
+        if event["event_type"] == "kill_hs":
+            event["weight"] = 2
+        if event["event_type"] == "kill_pnt":
+            event["weight"] = 2
+        if event["event_type"] == "kill_hs_pnt":
+            event["weight"] = 3
+    return dataset
 
 
-#takes eventType list and converts to eventTypeWeight dictionary
-#def createEventTypeWeights(events):
+# takes eventType list and converts to eventTypeWeight dictionary
+# def createEventTypeWeights(events):
 
 
 if __name__ == '__main__':
@@ -63,5 +64,6 @@ if __name__ == '__main__':
         datastore = json.load(f)
         dataset = json2dataset(datastore)
 
-	weighted_dataset = weighEventType(dataset)
-	print(weighted_dataset)
+        weighted_dataset = weighEventType(dataset)
+        sorted_weighted_dataset = sorted(weighted_dataset, key=lambda k: k["weight"], reverse=True)
+        print(sorted_weighted_dataset)
