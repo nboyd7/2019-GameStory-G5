@@ -1,4 +1,5 @@
 # Given event find it in the video files
+from datetime import timedelta
 
 import cv2
 import utils
@@ -9,9 +10,25 @@ START_TIME_DAY_2 = '2018-03-04T10:00:00.000+00:00'
 
 # todo: make a dictionary that matches player names with the video file they are in P1 - P10
 video_finder_day_1 = {
+    'RUSH':'2018-03-02_P1.mp4',
+    'nitr0':'2018-03-02_P1.mp4',
+    'tarik':'2018-03-02_P2.mp4',
+    'ELiGE':'2018-03-02_P2.mp4',
+    'Skadoodle':'2018-03-02_P3.mp4',
+    'twistzz':'2018-03-02_P3.mp4',
+    'Stewie2K':'2018-03-02_P4.mp4',
+    'steal':'2018-03-02_P4.mp4'
 }
 
 video_finder_day_2 = {
+    'RUSH': '2018-03-02_P1.mp4',
+    'nitr0': '2018-03-02_P1.mp4',
+    'tarik': '2018-03-02_P2.mp4',
+    'ELiGE': '2018-03-02_P2.mp4',
+    'Skadoodle': '2018-03-02_P3.mp4',
+    'twistzz': '2018-03-02_P3.mp4',
+    'Stewie2K': '2018-03-02_P4.mp4',
+    'steal': '2018-03-02_P4.mp4'
 }
 
 
@@ -22,6 +39,7 @@ def read_video(fp):
         print("Error opening video stream or file")
     return vid
 
+# https://www.geeksforgeeks.org/python-play-a-video-using-opencv/
 # diplay video for a certain frame number
 def display_video(cap, frame_number):
     # Read until video is completed
@@ -50,15 +68,22 @@ def display_video(cap, frame_number):
 
 #given event object find the starting frame.
 # Use the vid capture object to calculate fps.
+# Using start date of the streams
+# (hard coded - 10:00 for both stream days)
 def find_frame(event, start_date, vid):
     date_str = event['date']
     date = utils.convertDate(date_str)
-    delta = date - start_date
+    delta = get_time_delta(start_date, date)
     return calculate_frames(delta, vid.get(cv2.CAP_PROP_FPS))
 
-def calculate_frames(date_delta, fps):
-    seconds  = date_delta.total_seconds() + 70
+#using time delta calulate the frames based off of fps of the video
+def calculate_frames(delta, fps):
+    seconds = delta.total_seconds()
     return fps * seconds
+
+def get_time_delta(start_date, cur_date):
+    return cur_date - start_date
+
 
 # get video file based on actor of event
 def get_video_file(actor, day=1):
@@ -67,11 +92,24 @@ def get_video_file(actor, day=1):
     else:
         return video_finder_day_2[actor]
 
+#get start of round frame based of round number
+def get_start_match(match_num, frame_dict):
+    return frame_dict[match_num]
+
+def get_frame_offset(json_event_datatime, json_start_datetime, fps=60):
+    return timedelta(json_event_datatime - json_start_datetime) * fps
+
+
+# return frame of even
+def sync(event, frame_dict, vid, start_date):
+    start_round_frame = get_start_match(event["round"], frame_dict)
+    delta =
+
+
+
 
 if __name__ == '__main__':
-    video_path =
     vid = read_video(video_path)
-    fps = vid.get(cv2.CAP_PROP_FPS)
     print(fps)
     display_video(vid, 445500)
     print(metadata)
