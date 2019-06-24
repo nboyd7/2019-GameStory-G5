@@ -167,7 +167,6 @@ class DataHandler:
 
 
 
-<<<<<<< HEAD
 def json2dataset(jsonFile):
     result_array = []
     for i in range(0, len(jsonFile) - 1):
@@ -205,15 +204,14 @@ def weighEventType(dataset):
             event["weight"] = 3
     return dataset
 
-=======
->>>>>>> origin/master
+
 
 # takes eventType list and converts to eventTypeWeight dictionary
 # def createEventTypeWeights(events):
 
 
 if __name__ == '__main__':
-<<<<<<< HEAD
+
     filename = 'resources/1.json'
     dataset = {}
     with open(filename, 'r') as f:
@@ -223,7 +221,7 @@ if __name__ == '__main__':
         weighted_dataset = weighEventType(dataset)
         sorted_weighted_dataset = sorted(weighted_dataset, key=lambda k: k["weight"], reverse=True)
         print(sorted_weighted_dataset)
-=======
+
     myDl = DataHandler()
 
     for actor in myDl.actors:
@@ -231,4 +229,3 @@ if __name__ == '__main__':
         for i in range(0, len(myDl.eventWindowArrayPerActor[actor])):
             if myDl.eventWindowArrayPerActor[actor][i]["total_weight"] > 0:
                 print(myDl.eventWindowArrayPerActor[actor][i])
->>>>>>> origin/master
