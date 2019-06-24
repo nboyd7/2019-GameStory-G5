@@ -1,6 +1,8 @@
 # Given event find it in the video files
 from datetime import timedelta
 
+
+import tkinter as tk
 import cv2
 import utils
 from datetime import datetime
@@ -30,7 +32,7 @@ player_stream.append( {
     'RUSH'       : '2018-03-02_P1',
     'tarik'      : '2018-03-02_P2',
     'Skadoodle'  : '2018-03-02_P3',
-    'Stweie2k'   : '2018-03-02_P4',
+    'Stewie2k'   : '2018-03-02_P4',
     'autimatic'  : '2018-03-02_P5',
     'GuardiaN'   : '2018-03-02_P6',
     'olofmeister': '2018-03-02_P7',
@@ -43,7 +45,7 @@ player_id = {
     'RUSH'       : 1,
     'tarik'      : 2,
     'Skadoodle'  : 3,
-    'Stweie2k'   : 4,
+    'Stewie2k'   : 4,
     'autimatic'  : 5,
     'GuardiaN'   : 6,
     'olofmeister': 7,
@@ -113,6 +115,38 @@ def display_video(cap, frame_number, title='Frame'):
     # Closes all the frames
     cv2.destroyAllWindows()
 
+
+def display_video_extract(vid_path, frame_number, end_frame, title='Frame'):
+    cap = read_video(vid_path)
+    # Read until video is completed
+    cap.set(1, frame_number - 1)
+    current_frame = frame_number - 1
+    while (cap.isOpened()):
+        # Capture frame-by-frame
+        ret, frame = cap.read()
+        current_frame += 1
+
+        if ret == True:
+            # Display the resulting frame
+            cv2.imshow(title, frame)
+
+            # Press Q on keyboard to  exit
+            if cv2.waitKey(10) & 0xFF == ord('q'):
+                print(f'current_frame: {current_frame}')
+                break
+        # Break the loop
+        else:
+            break
+
+        if current_frame == end_frame:
+            break
+
+    # When everything done, release the video capture object
+    cap.release()
+
+    # Closes all the frames
+    cv2.destroyAllWindows()
+
 #given event object find the starting frame.
 # Use the vid capture object to calculate fps.
 # Using start date of the streams
@@ -164,75 +198,16 @@ def read_frame(cap, frame_number, frame_name="Frame"):
     cv2.destroyAllWindows()
 
 
-#master start frame is the start frame to which the json event log time is synced
-master_start_frame = [443259]
+def displayEventsDatasetDemo(display_events=10, show_frames_before=120):
+    myDh = read_JSON.DataHandler()
 
-#format: stream_starts[video_name][match_id] = match_round_1_start_frame
-stream_starts = {
-    '2018-03-02_P1': [443323],
-    '2018-03-02_P2': [443323],
-    '2018-03-02_P3': [443296],
-    '2018-03-02_P4': [443292],
-    '2018-03-02_P5': [443278],
-    '2018-03-02_P6': [443241],
-    '2018-03-02_P7': [443235],
-    '2018-03-02_P8': [443220],
-    '2018-03-02_P9': [443211],
-    '2018-03-02_P10': [443200],
-    '2018-03-02_P11': [438875]
-}
-#format: event_log_match_start_time[match_id] = event_log_time corresponding to match_round_1_start_frame
-event_log_match_start_time = [datetime(2018, 3, 2, 12, 9, 55, 350000)]
-
-
-#attempt to sync json with following event:
-# {"roundIdx": 1, "date": "2018-03-02T12:09:44.585+00:00", "type": "purchase", "data": {"actor": {"playerId": "olofmeister", "ingameTeam": "CT"}, "item": "item_kevlar"}}
-# 442595 in p7 corresponds to 2018-03-02T12:09:44.585+00:00 , match starts 646 frames later so 10.77 seconds later
-
-
-
-# find event:
-# # {"roundIdx": 1, "date": "2018-03-02T12:10:08.885+00:00", "type": "kill", "data":
-# # {"actor": {"playerId": "olofmeister", "ingameTeam": "CT", "position": {"x": -547, "y": 54, "z": 2}},
-# # "victim": {"playerId": "tarik", "ingameTeam": "TERRORIST", "position": {"x": -582, "y": -827, "z": 77}}, "weapon": "usp_silencer", "headshot": true, "penetrated": false}}
-def event_time_to_stream_frame(dt, player_id, match_id):
-    match_indx = match_id-1
-    vid_stream_path = f'C:\save\\2018-03-02_P{player_id}.mp4'
-    vid = read_video(vid_stream_path)
-    time_from_match_start = dt - event_log_match_start_time[match_indx]
-    frame_from_match_start = round(time_from_match_start.seconds * 60 + (time_from_match_start.microseconds / 1000000) * 60)
-    player_stream_frame_offset_from_master = stream_starts[f'2018-03-02_P{player_id}'][match_indx] - master_start_frame[match_indx]
-    frame_from_player_stream_match_start = stream_starts[f'2018-03-02_P{player_id}'][match_indx] + player_stream_frame_offset_from_master + frame_from_match_start
-    return frame_from_player_stream_match_start
-
-
-if __name__ == '__main__':
-    video_path = 'C:\save\\2018-03-02_P7.mp4'
-    vid = read_video(video_path)
-
-    """
-    event_time = datetime(2018, 3, 2, 12, 10, 8, 880000)
-    event_frame_in_stream = event_time_to_stream_frame(event_time, 7, 1)
-    print(event_frame_in_stream)
-    read_frame(vid, event_frame_in_stream)
-    """
-
-
-
-    myDl = read_JSON.DataHandler()
-
-    print(myDl.dataset)
-
-    ds = myDl.dataset
-
-    display_events = 10
+    ds = myDh.dataset
     display_event_count = 0
-    show_frames_before = 120
     for event in ds:
         event_time = event['date']
         event_playerid = player_id[event['actor']]
         event_filename = f"2018-03-02_P{event_playerid}"
-        event_framenumber = event_time_to_stream_frame(event_time, event_playerid, 1)
+        event_framenumber = utils.event_time_to_stream_frame(event_time, event_playerid, 1)
 
         video_path = f'C:\save\\{event_filename}.mp4'
         vid = read_video(video_path)
@@ -244,6 +219,22 @@ if __name__ == '__main__':
         display_event_count += 1
         if display_event_count == display_events:
             break
+
+if __name__ == '__main__':
+    myDl = read_JSON.DataHandler()
+    myEventWindows = myDl.eventWindowArrayPerActor
+
+    """for actor in myDl.actors:
+        print(actor)
+        for i in range(0, len(myDl.eventWindowArrayPerActor[actor])):
+            if myDl.eventWindowArrayPerActor[actor][i]["total_weight"] > 0:
+                print(myDl.eventWindowArrayPerActor[actor][i])"""
+
+
+
+
+
+
 
 
 
