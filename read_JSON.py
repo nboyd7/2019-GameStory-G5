@@ -29,6 +29,8 @@ class DataHandler:
         self.windowSize = 8;
         self.windowStraddle = self.windowSize/2;
 
+        self.padding = [2, 1]
+
         #TODO limit min and max date to start of match and end of match (and for commentator stream till end of highlights
         self.minDate = datetime.now()
         self.maxDate = datetime.now()
@@ -36,6 +38,7 @@ class DataHandler:
         self.actors = []
         self.eventWindowArrayPerActor = {}
         self.eventIdsPerWindowPerActor = {}
+        self.eventTimes = {}
 
         # event Type Weight dictionary
         self.eventTypeWeight = {
@@ -49,6 +52,7 @@ class DataHandler:
         self.assertWeightPerEvent()
         self.createWindowTimeLine()
         self.cleanWindowTimeLine()
+        self.paddedEventDataset()
 
 
 
@@ -135,6 +139,7 @@ class DataHandler:
                         w_dict["event_occurrences"][event["event_type"]] += 1
                         w_dict["total_weight"] += self.eventTypeWeight[event["event_type"]]
                         eventIdsInWindow.append(event["event_id"])
+                        self.eventTimes[event["event_id"]] = event["date"]
                 actorWindow.append(w_dict)
                 eventIdsPerWindow.append(eventIdsInWindow)
             actorWindows[actor] = actorWindow
@@ -148,9 +153,15 @@ class DataHandler:
         eventIds = self.eventIdsPerWindowPerActor
         for actor in self.actors:
             indx_to_del = []
-            for iter in range(0, len(windowTl[actor])-2):
+            iterCount = len(windowTl[actor])
+            for iter in range(0, iterCount):
                 next_iter = iter + 1
                 e_curr = eventIds[actor][iter]
+                if len(e_curr) == 0:
+                    indx_to_del.append(iter)
+                    continue
+                if iter == iterCount:
+                    continue
                 e_next = eventIds[actor][next_iter]
                 if set(e_next).issubset(set(e_curr)): #if all events in next window are included in current window then discard next window
                     indx_to_del.append(next_iter)
@@ -159,76 +170,131 @@ class DataHandler:
                 elif set(e_curr).issubset(set(e_next)):#set(e_curr) has less events than set(e_next) and is a subset of the latter
                     if iter not in indx_to_del:
                         indx_to_del.append(iter)
+            indx_to_del = list(dict.fromkeys(indx_to_del))
             for indx in sorted(indx_to_del, reverse=True):
                 del eventIds[actor][indx]
                 del windowTl[actor][indx]
         self.eventWindowArrayPerActor = windowTl
         self.eventIdsPerWindowPerActor = eventIds
 
+    def paddedEventDataset(self):
+        windowTl = self.eventWindowArrayPerActor
+        eventIds = self.eventIdsPerWindowPerActor
+        for actor in self.actors:
+            iterCount = len(windowTl[actor])
+            for iter in range(0, iterCount):
+                min_et = datetime.max
+                max_et = datetime.min
+                e_curr = eventIds[actor][iter]
+                for e_id in e_curr:
+                    if self.eventTimes[e_id] < min_et:
+                        min_et = self.eventTimes[e_id]
+                    if self.eventTimes[e_id] > max_et:
+                        max_et = self.eventTimes[e_id]
+                if len(e_curr) > 0:
+                    windowTl[actor][iter]['start_time'] = min_et - timedelta(seconds=self.padding[0])
+                    windowTl[actor][iter]['end_time'] = max_et + timedelta(seconds=self.padding[1])
+        self.eventWindowArrayPerActor = windowTl
 
 
-<<<<<<< HEAD
-def json2dataset(jsonFile):
-    result_array = []
-    for i in range(0, len(jsonFile) - 1):
-        result_dict = {}
-        jobj = jsonFile[i]
-        jdata = jobj["data"]
-        jobj_type = jobj["type"]
-        if jobj_type == 'kill':
-            event_type = 'kill'
-            event_actor = jdata["actor"]["playerId"]
-            event_victim = jdata["victim"]["playerId"]
-            if jdata["headshot"] == True:
-                event_type = event_type + '_hs'
-            if jdata["penetrated"] == False:
-                event_type = event_type + '_pnt'
-            result_dict["event_type"] = event_type
-            result_dict["date"] = jobj["date"]
-            result_dict["event_actor"] = event_actor
-            result_dict["event_victim"] = event_victim
-            result_array.append(result_dict)
+    #getter / setter methods for options in GUI
+    def getPadding(self):
+        return self.padding
 
-    return result_array
+    def setStartPadding(self, start):
+        self.padding = [int(start), self.padding[1]]
+        self.paddedEventDataset()
+        print(f"Recomputed dataset with new padding: [{self.padding[0]} {self.padding[1]}]")
+
+    def setEndPadding(self, end):
+        self.padding = [self.padding[0], int(end)]
+        self.paddedEventDataset()
+        print(f"Recomputed dataset with new padding: [{self.padding[0]} {self.padding[1]}]")
 
 
-# todo: go over our dataset and extract eventType to be weighed
-def weighEventType(dataset):
-    for event in dataset:
-        if event["event_type"] == "kill":
-            event["weight"] = 1
-        if event["event_type"] == "kill_hs":
-            event["weight"] = 2
-        if event["event_type"] == "kill_pnt":
-            event["weight"] = 2
-        if event["event_type"] == "kill_hs_pnt":
-            event["weight"] = 3
-    return dataset
+    def getWindowSize(self):
+        return self.windowSize
 
-=======
->>>>>>> origin/master
+    def setWindowSize(self, ws):
+        self.windowSize = int(ws)
+        self.windowStraddle = int(ws)/2
+        self.createWindowTimeLine()
+        self.cleanWindowTimeLine()
+        self.paddedEventDataset()
+        print(f"Recomputed dataset with new window size: {ws}")
+
+    # def getWindowStraddle(self):
+    #     return self.windowStraddle
+    #
+    # def setWindowStraddle(self, ws):
+    #     self.windowStraddle = float(ws)
+    #     self.createWindowTimeLine()
+    #     self.cleanWindowTimeLine()
+    #     self.paddedEventDataset()
+    #     print(f"Recomputed dataset with new window straddle: {ws}")
+
+    def json2dataset(self, jsonFile):
+        result_array = []
+        for i in range(0, len(jsonFile) - 1):
+            result_dict = {}
+            jobj = jsonFile[i]
+            jdata = jobj["data"]
+            jobj_type = jobj["type"]
+            if jobj_type == 'kill':
+                event_type = 'kill'
+                event_actor = jdata["actor"]["playerId"]
+                event_victim = jdata["victim"]["playerId"]
+                if jdata["headshot"] == True:
+                    event_type = event_type + '_hs'
+                if jdata["penetrated"] == False:
+                    event_type = event_type + '_pnt'
+                result_dict["event_type"] = event_type
+                result_dict["date"] = jobj["date"]
+                result_dict["event_actor"] = event_actor
+                result_dict["event_victim"] = event_victim
+                result_array.append(result_dict)
+
+        return result_array
+
+
+    # todo: go over our dataset and extract eventType to be weighed
+    def weighEventType(self, dataset):
+        for event in dataset:
+            if event["event_type"] == "kill":
+                event["weight"] = 1
+            if event["event_type"] == "kill_hs":
+                event["weight"] = 2
+            if event["event_type"] == "kill_pnt":
+                event["weight"] = 2
+            if event["event_type"] == "kill_hs_pnt":
+                event["weight"] = 3
+        return dataset
+
+
+
+
+
 
 # takes eventType list and converts to eventTypeWeight dictionary
 # def createEventTypeWeights(events):
 
 
+#  run to print converted dataset
 if __name__ == '__main__':
-<<<<<<< HEAD
+    myDl = DataHandler()
+
     filename = 'resources/1.json'
     dataset = {}
     with open(filename, 'r') as f:
         datastore = json.load(f)
-        dataset = json2dataset(datastore)
+        dataset = myDl.json2dataset(datastore)
 
-        weighted_dataset = weighEventType(dataset)
+        weighted_dataset = myDl.weighEventType(dataset)
         sorted_weighted_dataset = sorted(weighted_dataset, key=lambda k: k["weight"], reverse=True)
         print(sorted_weighted_dataset)
-=======
-    myDl = DataHandler()
 
     for actor in myDl.actors:
         print(actor)
         for i in range(0, len(myDl.eventWindowArrayPerActor[actor])):
-            if myDl.eventWindowArrayPerActor[actor][i]["total_weight"] > 0:
+            if myDl.eventWindowArrayPerActor[actor][i]["total_weight"] >= 0:
                 print(myDl.eventWindowArrayPerActor[actor][i])
->>>>>>> origin/master
