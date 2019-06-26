@@ -233,42 +233,42 @@ class DataHandler:
     #     self.paddedEventDataset()
     #     print(f"Recomputed dataset with new window straddle: {ws}")
 
-def json2dataset(jsonFile):
-    result_array = []
-    for i in range(0, len(jsonFile) - 1):
-        result_dict = {}
-        jobj = jsonFile[i]
-        jdata = jobj["data"]
-        jobj_type = jobj["type"]
-        if jobj_type == 'kill':
-            event_type = 'kill'
-            event_actor = jdata["actor"]["playerId"]
-            event_victim = jdata["victim"]["playerId"]
-            if jdata["headshot"] == True:
-                event_type = event_type + '_hs'
-            if jdata["penetrated"] == False:
-                event_type = event_type + '_pnt'
-            result_dict["event_type"] = event_type
-            result_dict["date"] = jobj["date"]
-            result_dict["event_actor"] = event_actor
-            result_dict["event_victim"] = event_victim
-            result_array.append(result_dict)
+    def json2dataset(self, jsonFile):
+        result_array = []
+        for i in range(0, len(jsonFile) - 1):
+            result_dict = {}
+            jobj = jsonFile[i]
+            jdata = jobj["data"]
+            jobj_type = jobj["type"]
+            if jobj_type == 'kill':
+                event_type = 'kill'
+                event_actor = jdata["actor"]["playerId"]
+                event_victim = jdata["victim"]["playerId"]
+                if jdata["headshot"] == True:
+                    event_type = event_type + '_hs'
+                if jdata["penetrated"] == False:
+                    event_type = event_type + '_pnt'
+                result_dict["event_type"] = event_type
+                result_dict["date"] = jobj["date"]
+                result_dict["event_actor"] = event_actor
+                result_dict["event_victim"] = event_victim
+                result_array.append(result_dict)
 
-    return result_array
+        return result_array
 
 
-# todo: go over our dataset and extract eventType to be weighed
-def weighEventType(dataset):
-    for event in dataset:
-        if event["event_type"] == "kill":
-            event["weight"] = 1
-        if event["event_type"] == "kill_hs":
-            event["weight"] = 2
-        if event["event_type"] == "kill_pnt":
-            event["weight"] = 2
-        if event["event_type"] == "kill_hs_pnt":
-            event["weight"] = 3
-    return dataset
+    # todo: go over our dataset and extract eventType to be weighed
+    def weighEventType(self, dataset):
+        for event in dataset:
+            if event["event_type"] == "kill":
+                event["weight"] = 1
+            if event["event_type"] == "kill_hs":
+                event["weight"] = 2
+            if event["event_type"] == "kill_pnt":
+                event["weight"] = 2
+            if event["event_type"] == "kill_hs_pnt":
+                event["weight"] = 3
+        return dataset
 
 
 
@@ -279,22 +279,22 @@ def weighEventType(dataset):
 # def createEventTypeWeights(events):
 
 
+#  run to print converted dataset
 if __name__ == '__main__':
+    myDl = DataHandler()
 
     filename = 'resources/1.json'
     dataset = {}
     with open(filename, 'r') as f:
         datastore = json.load(f)
-        dataset = json2dataset(datastore)
+        dataset = myDl.json2dataset(datastore)
 
-        weighted_dataset = weighEventType(dataset)
+        weighted_dataset = myDl.weighEventType(dataset)
         sorted_weighted_dataset = sorted(weighted_dataset, key=lambda k: k["weight"], reverse=True)
-        # print(sorted_weighted_dataset)
+        print(sorted_weighted_dataset)
 
-    myDl = DataHandler()
-
-    # for actor in myDl.actors:
-    #     print(actor)
-    #     for i in range(0, len(myDl.eventWindowArrayPerActor[actor])):
-    #         if myDl.eventWindowArrayPerActor[actor][i]["total_weight"] >= 0:
-    #             print(myDl.eventWindowArrayPerActor[actor][i])
+    for actor in myDl.actors:
+        print(actor)
+        for i in range(0, len(myDl.eventWindowArrayPerActor[actor])):
+            if myDl.eventWindowArrayPerActor[actor][i]["total_weight"] >= 0:
+                print(myDl.eventWindowArrayPerActor[actor][i])
