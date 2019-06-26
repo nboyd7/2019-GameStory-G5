@@ -39,16 +39,12 @@ def extract_frame_histogram(frame, channels, bins, ranges, type=cv2.COLOR_BGR2HS
     histogram = compute_histogram(hist_frame, channels, bins, ranges)
     return histogram / np.sum(histogram)
 
-
-
+def extract_greyscale_frame(frame):
+    return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
 def extract_frame_edges(frame):
-    print('')
-
-
-def extract_frame_colormap(frame, type):
-    print('')
-
+    edged_frame = cv2.Canny(frame, 50, 200)
+    return edged_frame
 
 
 def histograms_similarity(histogram0, histogram1):
