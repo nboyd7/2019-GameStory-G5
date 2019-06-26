@@ -11,6 +11,7 @@ class GUIController:
     def __init__(self):
         self.dH = read_JSON.DataHandler()
         self.guiDs = {}
+        print(self.dH.eventWindowArrayPerActor)
 
 
     def setPlayer(self, player_name):
@@ -28,6 +29,9 @@ class GUIController:
         w.grid(row=curr_row, column=2)
         w = Label(top, text='[ k | hs | pnt | hs+pnt ]')
         w.grid(row=curr_row, column=3)
+
+        w = Label(top, text='First event frame')
+        w.grid(row=curr_row, column=6)
 
         for data in self.guiDs:
             curr_row += 1
@@ -50,6 +54,26 @@ class GUIController:
 
             w = Button(top, text='Play', width=15, bg='lightgreen', command=partial(vidH.display_video_extract, vid_path, e_start_frame, e_end_frame))
             w.grid(row=curr_row, column=4)
+
+            w = Button(top, text='HarrisWrite', width=15, bg='lightgreen',
+                       command=partial(vidH.video_extract_harris_features, vid_path, e_start_frame, e_end_frame, True))
+            w.grid(row=curr_row, column=5)
+
+
+            e_event_first_frame = u.event_time_to_stream_frame(data['event_times'][0],u.player_id[player_name], 1)
+            w = Label(top, text=e_event_first_frame)
+            w.grid(row=curr_row, column=6)
+
+            w = Button(top, text='Show frame', width=15, bg='lightgreen',
+                       command=partial(vidH.read_frame, vid_path, e_event_first_frame))
+            w.grid(row=curr_row, column=7)
+
+            w = Button(top, text='Show harris frame', width=15, bg='lightgreen',
+                       command=partial(vidH.read_frame_harris, vid_path, e_event_first_frame))
+            w.grid(row=curr_row, column=8)
+
+
+
 
         button = Button(top, text='Close', width=25, command=top.destroy)
         button.grid(row=curr_row+1, column=0)
