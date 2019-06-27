@@ -17,6 +17,10 @@ stream_starts = {
     '2018-03-02_P10': [443200],
     '2018-03-02_P11': [438875]
 }
+
+commentator_stream_match_bounds = {
+    'match_1': [236500, 383096]
+}
 #format: event_log_match_start_time[match_id] = event_log_time corresponding to match_round_1_start_frame
 event_log_match_start_time = [datetime(2018, 3, 2, 12, 9, 55, 350000)]
 
