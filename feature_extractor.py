@@ -46,8 +46,16 @@ def extract_frame_histogram(frame, channels=[0, 1], bins=[8, 8], ranges=[[0, 180
 def extract_greyscale_frame(frame):
     return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-def extract_frame_edges(frame):
-    edged_frame = cv2.Canny(frame, 50, 200)
+# https://www.pyimagesearch.com/2015/04/06/zero-parameter-automatic-canny-edge-detection-with-python-and-opencv/
+# auto edge detector
+def extract_frame_edges(frame, sigma=0.33):
+    v = np.median(frame)
+
+    # apply automatic Canny edge detectin using the computed median
+    lower = int(max(0, (1.0 - sigma) * v))
+    upper = int(min(255, (1.0 + sigma) * v))
+    edged_frame = cv2.Canny(frame, lower, upper)
+
     return edged_frame
 
 def histograms_similarity(histogram0, histogram1):
@@ -69,7 +77,7 @@ if __name__ == '__main__':
     vid = video_handler.read_video(COMMENTATOR_STREAM_FP)
     ss = read_metadata.StreamSync()
     fn = ss.GetSyncMatchFilename(1, 11)
-    video_handler.display_video_extract(vid, 374565, 474565, extract_greyscale_frame)
+    video_handler.display_video_extract(vid, 374565, 376565, extract_frame_edges)
 
 
 
