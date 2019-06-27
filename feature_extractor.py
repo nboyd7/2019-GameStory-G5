@@ -1,12 +1,15 @@
 import cv2
+from scipy.spatial import distance
 import numpy as np
-import matplotlib.pyplot as plt
+import video_handler
+import read_metadata
 
 ROI_CROSSHAIR = [75,250,150,500]
+COMMENTATOR_STREAM_FP = '/Volumes/Other 1/2018-03-02_P11.mp4'
 
 # crop frame based on region of interest
 def get_subregion_frame(frame, roi=ROI_CROSSHAIR):
-    return frame[roi[0]:roi[1],roi[2]:roi[3]]
+    return frame[roi[0]:roi[1], roi[2]:roi[3]]
 
 # compute histogram for any extracted histogram frame (helper function)
 def compute_histogram(frame, channels, bins, ranges):
@@ -34,8 +37,9 @@ def compute_histogram(frame, channels, bins, ranges):
     return histogram
 
 # apply histogram type to frame of video then compute
-def extract_frame_histogram(frame, channels, bins, ranges, type=cv2.COLOR_BGR2HSV):
+def extract_frame_histogram(frame, channels=[0, 1], bins=[8, 8], ranges=[[0, 180], [0, 256]], type=cv2.COLOR_BGR2HSV):
     hist_frame = cv2.cvtColor(frame, type)
+    cv2.imshow("histogram",hist_frame)
     histogram = compute_histogram(hist_frame, channels, bins, ranges)
     return histogram / np.sum(histogram)
 
@@ -46,17 +50,29 @@ def extract_frame_edges(frame):
     edged_frame = cv2.Canny(frame, 50, 200)
     return edged_frame
 
-
 def histograms_similarity(histogram0, histogram1):
     return cv2.compareHist(histogram0.astype(np.float32), histogram1.astype(np.float32), 2)
 
-def compute_self_similarity(feature_vector_matrix, similarity_function=histograms_similarity):
+# common similarity function to use distance package cosine, manhattan, etc
+def similiarity(vector1, vector2, distance_func=distance.cosine):
+    return 1 - distance_func(vector1, vector2)
+
+def compute_self_similarity(feature_vector_matrix, similarity_function):
     similarity_matrix = np.zeros((feature_vector_matrix.shape[0], feature_vector_matrix.shape[0]))
     for i in range(len(feature_vector_matrix)):
         for j in range(len(feature_vector_matrix)):
             similarity_matrix[i, j] = similarity_function(feature_vector_matrix[i], feature_vector_matrix[j])
     # For calling the similarity function, you can just use similarity_function(first_vector, second_vector).
     return similarity_matrix
+
+if __name__ == '__main__':
+    vid = video_handler.read_video(COMMENTATOR_STREAM_FP)
+    ss = read_metadata.StreamSync()
+    fn = ss.GetSyncMatchFilename(1, 11)
+    video_handler.display_video_extract(vid, 374565, 474565, extract_greyscale_frame)
+
+
+
 
 
 

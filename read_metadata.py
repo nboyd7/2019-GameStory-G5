@@ -35,12 +35,7 @@ class StreamSync:
             start_frame = self.GetStartFrame(filenames[i-1])
             self.data[match_key][player_key] = start_frame
 
-
-
-
-
-
-    def GetStartFrame(self, csv_path, loud=False):
+    def GetStartFrame(self, csv_path, round=1, loud=False):
         with open(self.csv_folder + csv_path) as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=';')
             line_count = 0
@@ -49,12 +44,14 @@ class StreamSync:
                     if loud:
                         print(f'Column names are {", ".join(row)}')
                     line_count += 1
-                elif line_count == 1:
+                elif line_count == round:
                     if loud:
                         print(f'\t match: {row[0]} round: {row[1]} round_begin: {row[2]} frame_nr: {row[3]}.')
                     start_frame = row[3]
                     line_count += 1
                     break
+                else:
+                    line_count += 1
             if loud:
                 print(f'Processed {line_count} lines.')
             return start_frame
