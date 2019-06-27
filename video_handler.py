@@ -1,12 +1,14 @@
 # Given event find it in the video files
 from datetime import timedelta
 
-
+import numpy as np
 import tkinter as tk
 import cv2
 import utils
 from datetime import datetime
 import read_JSON
+from imutils.video import FileVideoStream
+import time
 
 START_TIME_DAY_1 = '2018-03-02T10:00:00.000+00:00'
 START_TIME_DAY_2 = '2018-03-04T10:00:00.000+00:00'
@@ -88,7 +90,8 @@ def read_video(fp):
 
 # https://www.geeksforgeeks.org/python-play-a-video-using-opencv/
 # diplay video for a certain frame number
-def display_video(cap, frame_number, title='Frame'):
+def display_video(vid_path, frame_number, title='Frame'):
+    cap = read_video(vid_path)
     # Read until video is completed
     cap.set(1, frame_number - 1)
     current_frame = frame_number - 1
@@ -147,6 +150,67 @@ def display_video_extract(vid_path, frame_number, end_frame, title='Frame'):
     # Closes all the frames
     cv2.destroyAllWindows()
 
+#return grayscale image with only harris centroids and magnitude
+def video_extract_harris_features(vid_path, frame_number, end_frame, filename='harris_features'):
+    # FASTER video reading (decode in separate thread)
+    fvs = FileVideoStream(vid_path, start_frame=frame_number).start()
+    time.sleep(1.0)
+
+    current_frame = frame_number - 1
+    frameCount = end_frame - frame_number + 1
+
+    roi = [0.35, 0.65, 0.35, 0.65]
+    frame_width = int(fvs.get_width())
+    frame_height = int(fvs.get_height())
+    result_width = round(roi[3] * frame_width) - round(roi[2] * frame_width)
+    result_height = round(roi[1] * frame_height) - round(roi[0] * frame_height)
+    buf = np.empty((frameCount, result_height, result_width), np.dtype('uint8'))
+
+    print_iter = 0
+
+    while fvs.more():
+
+        print_iter += 1
+        # Capture frame-by-frame
+        frame = fvs.read()
+        current_frame += 1
+
+        # extract features from the frame
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        gray = np.float32(gray)
+
+        gray = gray[round(roi[0]*frame_height):round(roi[1]*frame_height), round(roi[2]*frame_width):round(roi[3]*frame_width)]
+        # frame = frame[round(roi[0]*size_1):round(roi[1]*size_1), round(roi[2]*size_2):round(roi[3]*size_2)]
+        dst = cv2.cornerHarris(gray, 4, 3, 0.04)
+
+        # result is dilated for marking the corners, not important
+        dst = cv2.dilate(dst, None)
+
+        # Threshold for an optimal value, it may vary depending on the image.
+        # frame[dst > 0.01 * dst.max()] = [0, 0, 255]
+
+        harris_result = np.uint8(255*dst/dst.max())
+
+        buf[current_frame-frame_number] = harris_result
+
+        # cv2.imshow('Frame', harris_result)
+        if divmod(print_iter, 60)[1] == 0:
+            print(f'Progress: {100*(current_frame-frame_number)/(end_frame-frame_number)}%')
+
+
+        # Press Q on keyboard to  exit
+        if cv2.waitKey(10) & 0xFF == ord('q'):
+            print(f'current_frame: {current_frame}')
+            break
+        if current_frame == end_frame:
+            fvs.stop()
+            break
+
+    #save numpy matrix of feature frames
+    np.save(f'{filename}.npy', buf)
+
+
 #given event object find the starting frame.
 # Use the vid capture object to calculate fps.
 # Using start date of the streams
@@ -186,11 +250,59 @@ def sync(event, frame_dict, vid, start_date):
     start_round_frame = get_start_match(event["round"], frame_dict)
 
 
-def read_frame(cap, frame_number, frame_name="Frame"):
+def read_frame(vid_path, frame_number, frame_name="Frame"):
+    cap = read_video(vid_path)
+
+
     cap.set(1, frame_number)
     ret, frame = cap.read()
 
     cv2.imshow(frame_name, frame)
+
+    cv2.waitKey()
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+def get_frame(vid_path, frame_number):
+    cap = read_video(vid_path)
+
+    cap.set(1, frame_number)
+    ret, frame = cap.read()
+
+    cap.release()
+    return frame
+
+def read_frame_harris(vid_path, frame_number, frame_name="Frame"):
+    cap = read_video(vid_path)
+
+
+    cap.set(1, frame_number)
+    ret, frame = cap.read()
+
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    gray = np.float32(gray)
+    roi = [0.35, 0.65, 0.35, 0.65] #only compute harris for small ROI around crosshair (remove corners detected in UI and use less data)
+    size_1 = gray.shape[0]
+    size_2 = gray.shape[1]
+
+    gray = gray[round(roi[0] * size_1):round(roi[1] * size_1), round(roi[2] * size_2):round(roi[3] * size_2)]
+    # frame = frame[round(roi[0]*size_1):round(roi[1]*size_1), round(roi[2]*size_2):round(roi[3]*size_2)]
+    dst = cv2.cornerHarris(gray, 4, 3, 0.04)
+
+    # result is dilated for marking the corners, not important
+    dst = cv2.dilate(dst, None)
+
+    harris_result = np.uint8(255 * dst / dst.max())
+    np.save('query_features_1', harris_result)
+
+    # Threshold for an optimal value, it may vary depending on the image.
+    # frame[dst > 0.01 * dst.max()] = [0, 0, 255]
+
+    cv2.imshow(frame_name, dst / dst.max())
+
+    # cv2.imshow(frame_name, frame)
 
     cv2.waitKey()
 
