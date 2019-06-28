@@ -225,6 +225,16 @@ class DataHandler:
         self.paddedEventDataset()
         print(f"Recomputed dataset with new window size: {ws}")
 
+    def getEventWeightNames(self):
+        return list(self.eventTypeWeight.keys())
+
+
+    def getEventWeight(self, event_type):
+        return self.eventTypeWeight[event_type]
+
+    def setEventWeightType(self, event_type, weight):
+        self.eventTypeWeight[event_type] = weight
+
     # def getWindowStraddle(self):
     #     return self.windowStraddle
     #
