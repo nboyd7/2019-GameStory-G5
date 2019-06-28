@@ -1,4 +1,6 @@
-
+import numpy as np
+import experiment as ex
+import feature_extractor as ft
 from tkinter import *
 import video_handler as vidH
 import utils as u
@@ -55,22 +57,22 @@ class GUIController:
             w = Button(top, text='Play', width=15, bg='lightgreen', command=partial(vidH.display_video_extract, vid_path, e_start_frame, e_end_frame))
             w.grid(row=curr_row, column=4)
 
-            w = Button(top, text='HarrisWrite', width=15, bg='lightgreen',
-                       command=partial(vidH.video_extract_harris_features, vid_path, e_start_frame, e_end_frame, True))
+            e_event_first_frame = u.event_time_to_stream_frame(data['event_times'][0],u.player_id[player_name], 1)
+            w = Label(top, text=e_event_first_frame)
             w.grid(row=curr_row, column=5)
 
 
-            e_event_first_frame = u.event_time_to_stream_frame(data['event_times'][0],u.player_id[player_name], 1)
-            w = Label(top, text=e_event_first_frame)
-            w.grid(row=curr_row, column=6)
 
-            w = Button(top, text='Show frame', width=15, bg='lightgreen',
-                       command=partial(vidH.read_frame, vid_path, e_event_first_frame))
-            w.grid(row=curr_row, column=7)
+            e_i = 0
+            for event_time in data['event_times']:
+                w = Button(top, text=f'Show e: {e_i+1}', width=10, bg='lightgreen',
+                           command=partial(vidH.read_frame, vid_path, u.event_time_to_stream_frame(event_time, u.player_id[player_name], 1)))
+                w.grid(row=curr_row, column=6+2*e_i)
 
-            w = Button(top, text='Show harris frame', width=15, bg='lightgreen',
-                       command=partial(vidH.read_frame_harris, vid_path, e_event_first_frame))
-            w.grid(row=curr_row, column=8)
+                w = Button(top, text=f'Find e: {e_i+1}', width=10, bg='lightblue',
+                           command=partial(self.getMatch, event_time, player_name))
+                w.grid(row=curr_row, column=7+2*e_i)
+                e_i += 1
 
 
 
@@ -78,6 +80,20 @@ class GUIController:
         button = Button(top, text='Close', width=25, command=top.destroy)
         button.grid(row=curr_row+1, column=0)
         top.mainloop()
+
+    def getMatch(self, event_time, player_name):
+        roi = [0.25, 0.55, 0.35, 0.65]
+        vid_path = u.playerToPath(player_name)
+        event_frame = u.event_time_to_stream_frame(event_time, u.player_id[player_name], 1)
+        frame = vidH.get_frame(vid_path, event_frame)
+        frame_roi = ft.get_ROI(frame, roi)
+        harris_result = ft.get_harris_feature(frame_roi)
+        hist_result = ft.extract_frame_histogram(frame_roi)
+        libraries = {'harris':  np.load('./library_match_1_round_1_harris.npy'), 'histogram': np.load('./library_match_1_round_1_histogram.npy')}
+        queries = {'harris': harris_result, 'histogram': hist_result}
+        closest_match_frame_offset, closest_match_diff, all_match_scores = ex.findMatch(libraries, queries)
+        vidH.read_frame('C:\save\\2018-03-02_P11.mp4', ex.frameOffsetToCommentatorFrame(1, closest_match_frame_offset),
+                                 f'{player_name} event frame match')
 
     def openSettings(self):
         top = Toplevel()

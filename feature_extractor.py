@@ -17,7 +17,7 @@ def video_extract_features(vid_path, frame_number, end_frame):
     current_frame = frame_number - 1
     frameCount = end_frame - frame_number + 1
 
-    roi = [0.35, 0.65, 0.35, 0.65]
+    roi = [0.25, 0.55, 0.35, 0.65]
     frame_width = int(fvs.get_width())
     frame_height = int(fvs.get_height())
     result_width = round(roi[3] * frame_width) - round(roi[2] * frame_width)
@@ -39,7 +39,7 @@ def video_extract_features(vid_path, frame_number, end_frame):
 
         hist_result = extract_frame_histogram(frame_roi)
 
-        buf[current_frame-frame_number] = harris_result
+        buf[current_frame - frame_number] = harris_result
         hist_buf[current_frame - frame_number] = hist_result
 
         # cv2.imshow('Frame', harris_result)
@@ -93,11 +93,12 @@ def get_ROI(frame, roi):
     return frame[round(roi[0] * size_1):round(roi[1] * size_1),
             round(roi[2] * size_2):round(roi[3] * size_2)]
 
-def get_harris_feature(frame):
+# best : blur_ft 'harris_bs4_as15_k0.05_blur25.png'
+def get_harris_feature(frame, blockSize=4, aperture_size=15, k=0.05):
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     gray = np.float32(gray)
-    dst = cv2.cornerHarris(gray, 4, 3, 0.04)
-    return np.uint8(255 * dst / dst.max())
+    dst = cv2.cornerHarris(gray, blockSize, aperture_size, k)
+    return cv2.boxFilter(np.uint8(255 * dst / dst.max()), ddepth=-1, ksize=(25, 25))
 
 # apply histogram type to frame of video then compute
 def extract_frame_histogram(frame, channels=[0, 1], bins=[8, 8], ranges=[[0, 180], [0, 256]], type=cv2.COLOR_BGR2HSV):
