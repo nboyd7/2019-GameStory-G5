@@ -176,6 +176,12 @@ class DataHandler:
             for indx in sorted(indx_to_del, reverse=True):
                 del eventIds[actor][indx]
                 del windowTl[actor][indx]
+        for actor in self.actors:
+            iter = 0
+            for i in range(0, len(windowTl[actor])):
+                iter += 1
+                windowTl[actor][i]['window'] = iter
+
         self.eventWindowArrayPerActor = windowTl
         self.eventIdsPerWindowPerActor = eventIds
 
