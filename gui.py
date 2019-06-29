@@ -72,9 +72,6 @@ class GUIController:
                        command=partial(vidH.read_frame_harris, vid_path, e_event_first_frame))
             w.grid(row=curr_row, column=8)
 
-
-
-
         button = Button(top, text='Close', width=25, command=top.destroy)
         button.grid(row=curr_row+1, column=0)
         top.mainloop()
@@ -91,39 +88,37 @@ class GUIController:
         curr_row += 1
         self.addSetting(top, 'window_size:', self.dH.getWindowSize(), curr_row, self.dH.setWindowSize)
         curr_row += 1
-        self.addDropDownSetting(top, 'event_weights:', curr_row, self.dH.setEventWeightType)
+        self.addDropDownSetting(top, 'event_weights:', curr_row, self.dH.getEventWeightNames(), self.dH.setEventWeightType)
         curr_row += 1
 
         button = Button(top, text='Close', width=25, command=top.destroy)
         button.grid(row=curr_row + 1, column=0)
         top.mainloop()
 
-    def addDropDownSetting(self, master, desc, curr_row, ret_func):
+    def addDropDownSetting(self, master, desc, curr_row, list, ret_func):
         w = Label(master, text=f'{desc}')
         w.grid(row=curr_row, column=0)
 
         global var0
         var0 = StringVar(master)
-        e = Entry(master,textvariable=var0)
+        e = Entry(master, textvariable=var0)
         e.grid(row=curr_row, column=2)
-        #e.delete(0, END)
 
-        names = self.dH.getEventWeightNames()
-        var = StringVar(master)
-        var.set("Change event weight")
-        #var.trace('w', partial(self.showEventWeight, e, var.value()))
+        global var1
+        var1 = StringVar(master)
 
-        menu = OptionMenu(master, var, *names, command=self.showEventWeight)
+        menu = OptionMenu(master, var1, *list, command=self.showEventWeight)
         menu.grid(row=curr_row, column=1)
-        menu.configure(width=30)
+        menu.configure(width=18)
         menu.grid()
 
         button = Button(master, text='Update', width=18, command=partial(self.updateSettingWeight,
-                                                                         ret_func, e, var.get()))
+                                                                         ret_func, e))
         button.grid(row=curr_row, column=3)
 
     def showEventWeight(self, selection):
         var0.set(self.dH.getEventWeight(selection))
+        var1.set(selection)
 
 
     def addSetting(self, master, desc, val, curr_row, ret_func):
@@ -135,14 +130,18 @@ class GUIController:
         e.delete(0, END)
         e.insert(0, f"{val}")
 
-        button = Button(master, text='Update', width=18, command=partial(self.updateSettingWeight, ret_func, e))
+        button = Button(master, text='Update', width=18, command=partial(self.updateSetting, ret_func, e))
         button.grid(row=curr_row, column=2)
 
     def updateSetting(self, ret_func, entry):
         ret_func(entry.get())
 
-    def updateSettingWeight(self, ret_func, entry, event_name):
-        ret_func(event_name, entry.get())
+    def updateSettingWeight(self, ret_func, entry):
+        ret_func(var1.get(), int(entry.get()))
+
+    def getVarValue(self, var):
+        return var.get()
+
 
 
 if __name__ == '__main__':
