@@ -129,6 +129,8 @@ class GUIController:
         curr_row += 1
         self.addSetting(top, 'window_size:', self.dH.getWindowSize(), curr_row, self.dH.setWindowSize)
         curr_row += 1
+        self.addSetting(top, 'match_thresh:', 0, curr_row, u.updateWindowMatches)
+        curr_row += 1
         # self.addSetting(top, 'window_straddle:', self.dH.getWindowStraddle(), curr_row, self.dH.setWindowStraddle)
         # curr_row += 1
 
@@ -154,7 +156,16 @@ class GUIController:
     def openRankedList(self):
         top = Toplevel()
         top.title('Ranked List')
-        curr_row = 0
+
+        rl = u.getRankedList()
+
+        for row in rl:
+            weight = row['weight']
+            name = row['window_name']
+            w = Label(top, text=f'{weight} {name}')
+            w.pack()
+
+        top.mainloop()
 
 if __name__ == '__main__':
     controller = GUIController()
