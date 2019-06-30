@@ -101,6 +101,8 @@ def storeWindowMatches():
 
 
 def updateWindowMatches(newThresh):
+    newThresh = float(newThresh)
+    print(newThresh)
     with open('stored_json\\player_window_event_matches.txt') as json_file:
         data = json.load(json_file)
     for actor in data:
@@ -150,7 +152,8 @@ def isaMatch(closest_match_diff, closest_match_frame_offset, match_thresh):
                 frame_diff = closest_match_frame_offset[i + 1] - closest_match_frame_offset[i]
                 if frame_diff < 0:
                     return False
-    return True
+        return True
+    return False
 
 
 def frameOffsetToCommentatorFrame(match_id, frame_offset):
@@ -236,21 +239,23 @@ def getRankedList():
     stats = {}
     for actor in ds:
         for data in ds[actor]:
-            stored_window_match = u.getWindowStoredData(actor, data['window'])
+            window_num = data['window']
+            stored_window_match = u.getWindowStoredData(actor, window_num)
             if stored_window_match != None:
-                if stored_window_match['matched']:
+                if stored_window_match['matched'] == False:
                     window_stats = {}
                     window_stats['weight'] = data['total_weight']
                     window_stats['data'] = data
                     window_stats['actor'] = actor
-                    stats[f'{actor}_{window}'] = window_stats
-    sorted_keys = sorted(stats, key=lambda x: (stats[x]['weight']))
+                    stats[f'{actor}_{window_num}'] = window_stats
+    sorted_keys = sorted(stats, key=lambda x: (-1*stats[x]['weight']))
     result_dict_list = []
     for key in sorted_keys:
         temp_dict = stats[key]
         temp_dict['window_name'] = key
         result_dict_list.append(temp_dict)
-    return temp_dict
+    print(result_dict_list)
+    return result_dict_list
 
 def playerToPath(player_name):
     id = player_id[player_name]
